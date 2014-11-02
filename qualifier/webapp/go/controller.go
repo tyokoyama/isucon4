@@ -134,12 +134,12 @@ var tIndex = template.Must(template.New("index").Parse(index))
 var tMyPage = template.Must(template.New("mypage").Parse(mypage))
 
 func IndexController(w http.ResponseWriter, r *http.Request) {
-  var st struct {
-    Flash interface{}
-  }
+	var st struct {
+		Flash interface{}
+	}
 
 	session, _ := store.Get(r, "isucon_go_session")
-  st.Flash = session.Values["notice"]
+	st.Flash = session.Values["notice"]
 	fmt.Println(st.Flash)
 	if err := tIndex.Execute(w, st); err != nil {
 		http.Error(w, "500 page Error", http.StatusInternalServerError)
@@ -193,10 +193,10 @@ func MyPageController(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReportController(w http.ResponseWriter, r *http.Request) {
-	b, err := json.Marshal(map[string][]string {
+	b, err := json.Marshal(map[string][]string{
 		"banned_ips":   bannedIPs(),
 		"locked_users": lockedUsers(),
-		})
+	})
 
 	if err != nil {
 		http.Error(w, "500 page Error", http.StatusInternalServerError)

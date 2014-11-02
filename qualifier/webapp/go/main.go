@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/zenazn/goji"
-	"github.com/gorilla/sessions"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/sessions"
+	"github.com/zenazn/goji"
 	"net/http"
 	"strconv"
 )
