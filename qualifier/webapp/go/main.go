@@ -2,8 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/zenazn/goji"
 	"github.com/gorilla/sessions"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
@@ -47,26 +48,18 @@ func init() {
 var store = sessions.NewCookieStore([]byte("secret-isucon"))
 
 func main() {
-	r := mux.NewRouter()
+	flag.Set("bind", ":8080")
 
-	r.Handle("/images/{rest}", http.StripPrefix("/images/", http.FileServer(http.Dir("../public/images"))))
-	r.Handle("/stylesheets/{rest}", http.StripPrefix("/stylesheets/", http.FileServer(http.Dir("../public/stylesheets"))))
+	goji.Get("/", IndexController)
+	goji.Post("/login", LoginController)
+	goji.Get("/mypage", MyPageController)
+	goji.Get("/report", ReportController)
+	goji.Get("/images/*", http.StripPrefix("/images/", http.FileServer(http.Dir("../public/images"))))
+	goji.Get("/stylesheets/*", http.StripPrefix("/stylesheets/", http.FileServer(http.Dir("../public/stylesheets"))))
+	goji.NotFound(NotFound)
 
-	r.HandleFunc("/", IndexController)
-	r.HandleFunc("/login", LoginController).Methods("POST")
-	r.HandleFunc("/mypage", MyPageController)
-	r.HandleFunc("/report", ReportController)
+	goji.Serve()
 
-	r.NotFoundHandler = http.HandlerFunc(NotFound)
-
-	http.ListenAndServe(":8080", LoggingServeMux(r))
-}
-
-func LoggingServeMux(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-			handler.ServeHTTP(w, r)
-		})
 }
 
 func NotFound(w http.ResponseWriter, r *http.Request) {
