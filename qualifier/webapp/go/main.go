@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 var db *sql.DB
@@ -64,9 +65,9 @@ func main() {
 
 func LoggingServeMux(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-			handler.ServeHTTP(w, r)
-		})
+		fmt.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
 }
 
 func NotFound(w http.ResponseWriter, r *http.Request) {
