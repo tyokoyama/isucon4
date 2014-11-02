@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"text/template"
-
-	// "github.com/gorilla/sessions"
-
 )
 
 var index = `
@@ -137,10 +134,14 @@ var tIndex = template.Must(template.New("index").Parse(index))
 var tMyPage = template.Must(template.New("mypage").Parse(mypage))
 
 func IndexController(w http.ResponseWriter, r *http.Request) {
+  var st struct {
+    Flash interface{}
+  }
 
 	session, _ := store.Get(r, "isucon_go_session")
-
-	if err := tIndex.Execute(w, session.Values["notice"]); err != nil {
+  st.Flash = session.Values["notice"]
+	fmt.Println(st.Flash)
+	if err := tIndex.Execute(w, st); err != nil {
 		http.Error(w, "500 page Error", http.StatusInternalServerError)
 	}
 }
@@ -161,7 +162,7 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 			notice = "Wrong username or password"
 		}
 
-		fmt.Println(err)
+		fmt.Printf("Error: %v\n", err)
 		session.Values["notice"] = notice
 		session.Save(r, w)
 		http.Redirect(w, r, "/", http.StatusFound)
