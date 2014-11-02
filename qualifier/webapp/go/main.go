@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/go-martini/martini"
+	// "github.com/go-martini/martini"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/martini-contrib/render"
-	"github.com/martini-contrib/sessions"
+	// "github.com/martini-contrib/render"
+	// "github.com/martini-contrib/sessions"
 	"net/http"
 	"strconv"
 )
@@ -45,63 +47,81 @@ func init() {
 	}
 }
 
+var store = sessions.NewCookieStore([]byte("secret-isucon"))
+
 func main() {
-	m := martini.Classic()
+	r := mux.NewRouter()
 
-	store := sessions.NewCookieStore([]byte("secret-isucon"))
-	m.Use(sessions.Sessions("isucon_go_session", store))
+	r.Handle("/images/{rest}", http.StripPrefix("/images/", http.FileServer(http.Dir("../public/images"))))
+	r.Handle("/stylesheets/{rest}", http.StripPrefix("/stylesheets/", http.FileServer(http.Dir("../public/stylesheets"))))
 
-	m.Use(martini.Static("../public"))
-	m.Use(render.Renderer(render.Options{
-		Layout: "layout",
-	}))
+	r.HandleFunc("/", IndexController)
+	r.HandleFunc("/login", LoginController).Methods("POST")
+	r.HandleFunc("/mypage", MyPageController)
+	r.HandleFunc("/report", ReportController)
 
-	m.Get("/", func(r render.Render, session sessions.Session) {
-		r.HTML(200, "index", map[string]string{"Flash": getFlash(session, "notice")})
-	})
+	r.NotFoundHandler = http.HandlerFunc(NotFound)
+	// m := martini.Classic()
 
-	m.Post("/login", func(req *http.Request, r render.Render, session sessions.Session) {
-		user, err := attemptLogin(req)
+	// store := sessions.NewCookieStore([]byte("secret-isucon"))
+	// m.Use(sessions.Sessions("isucon_go_session", store))
 
-		notice := ""
-		if err != nil || user == nil {
-			switch err {
-			case ErrBannedIP:
-				notice = "You're banned."
-			case ErrLockedUser:
-				notice = "This account is locked."
-			default:
-				notice = "Wrong username or password"
-			}
+	// m.Use(martini.Static("../public"))
+	// m.Use(render.Renderer(render.Options{
+	// 	Layout: "layout",
+	// }))
 
-			session.Set("notice", notice)
-			r.Redirect("/")
-			return
-		}
+	// m.Get("/", func(r render.Render, session sessions.Session) {
+	// 	r.HTML(200, "index", map[string]string{"Flash": getFlash(session, "notice")})
+	// })
 
-		session.Set("user_id", strconv.Itoa(user.ID))
-		r.Redirect("/mypage")
-	})
+	// m.Post("/login", func(req *http.Request, r render.Render, session sessions.Session) {
+	// 	user, err := attemptLogin(req)
 
-	m.Get("/mypage", func(r render.Render, session sessions.Session) {
-		currentUser := getCurrentUser(session.Get("user_id"))
+	// 	notice := ""
+	// 	if err != nil || user == nil {
+	// 		switch err {
+	// 		case ErrBannedIP:
+	// 			notice = "You're banned."
+	// 		case ErrLockedUser:
+	// 			notice = "This account is locked."
+	// 		default:
+	// 			notice = "Wrong username or password"
+	// 		}
 
-		if currentUser == nil {
-			session.Set("notice", "You must be logged in")
-			r.Redirect("/")
-			return
-		}
+	// 		session.Set("notice", notice)
+	// 		r.Redirect("/")
+	// 		return
+	// 	}
 
-		currentUser.getLastLogin()
-		r.HTML(200, "mypage", currentUser)
-	})
+	// 	session.Set("user_id", strconv.Itoa(user.ID))
+	// 	r.Redirect("/mypage")
+	// })
 
-	m.Get("/report", func(r render.Render) {
-		r.JSON(200, map[string][]string{
-			"banned_ips":   bannedIPs(),
-			"locked_users": lockedUsers(),
-		})
-	})
+	// m.Get("/mypage", func(r render.Render, session sessions.Session) {
+	// 	currentUser := getCurrentUser(session.Get("user_id"))
 
-	http.ListenAndServe(":8080", m)
+	// 	if currentUser == nil {
+	// 		session.Set("notice", "You must be logged in")
+	// 		r.Redirect("/")
+	// 		return
+	// 	}
+
+	// 	currentUser.getLastLogin()
+	// 	r.HTML(200, "mypage", currentUser)
+	// })
+
+	// m.Get("/report", func(r render.Render) {
+	// 	r.JSON(200, map[string][]string{
+	// 		"banned_ips":   bannedIPs(),
+	// 		"locked_users": lockedUsers(),
+	// 	})
+	// })
+
+	http.ListenAndServe(":8080", r)
+}
+
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Path)
 }
